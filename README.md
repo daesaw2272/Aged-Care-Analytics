@@ -18,4 +18,5 @@ Together with Pooled DEA O1 O2 and Seperate DEA O1 and O2 results we can do the 
 What I calculated are Efficiency scores, rankings, scale efficiency, scale direction, benchmarking peers and improvement targets.
 
 
-you can continue this, make adjustments, I am gonna work on WVS one
+
+
