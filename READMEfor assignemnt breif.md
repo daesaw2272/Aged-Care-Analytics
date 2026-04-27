@@ -18,8 +18,6 @@ Core tasks:
 (we are going to do this) Advanced extension: Apply meta-frontier analysis to compare efficiency separately for Organisation 1 vs Organisation 2, and for Regional vs Metro facilities, decomposing performance gaps into technical inefficiency and technology gap components.
 
 
-Need to do SFA
-
 Need to do Visualisations
 
 Need to do findings
