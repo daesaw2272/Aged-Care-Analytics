@@ -188,11 +188,23 @@ for model_name, output_col in models:
 results = pd.concat(all_results)
 peers = pd.concat(all_peers)
 targets = pd.concat(all_targets)
+
+peers_agg = (
+    peers.groupby(["facility_id", "group", "model", "rts"])
+    .apply(lambda g: pd.Series({
+        "benchmark_peers": ", ".join(g["peer_facility"].astype(str)),
+        "peer_lambdas":    ", ".join(g["lambda_weight"].round(4).astype(str))
+    }))
+    .reset_index()
+)
+
+targets = targets.merge(peers_agg, on=["facility_id", "group", "model", "rts"], how="left")
+
 summary = pd.DataFrame(summary_rows)
 
 
 inefficient_targets = targets[targets["efficiency"] < 1 - 1e-6].copy()
-
+summary = pd.DataFrame(summary_rows)
 
 
 vrs = results[results["rts"] == "VRS"][["facility_id", "group", "model", "dea_efficiency"]]

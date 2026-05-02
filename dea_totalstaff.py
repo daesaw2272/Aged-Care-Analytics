@@ -204,6 +204,17 @@ for model_name, output_col in models:
 results = pd.concat(all_results, ignore_index=True)
 benchmark_peers = pd.concat(all_peers, ignore_index=True)
 target_improvements = pd.concat(all_targets, ignore_index=True)
+peers_agg = (
+    benchmark_peers.groupby(["facility_id", "group", "model", "rts"])
+    .apply(lambda g: pd.Series({
+        "benchmark_peers": ", ".join(g["peer_facility"].astype(str)),
+        "peer_lambdas":    ", ".join(g["lambda_weight"].round(4).astype(str))
+    }))
+    .reset_index()
+)
+target_improvements = target_improvements.merge(
+    peers_agg, on=["facility_id", "group", "model", "rts"], how="left")
+
 summary = pd.DataFrame(summary_rows)
 
 inefficient_targets = target_improvements[
