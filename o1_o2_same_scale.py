@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 
-
-file_path = "data - RACF.xlsx"   # change if needed
-
+# Use the exact uploaded filename
+file_path = "data - RACF.xlsx"
 
 # ============================================================
 # O1 DATA
@@ -30,17 +29,12 @@ o1_quality = o1_quality.rename(columns={
 
 # Create consistent facility IDs
 o1_staff = o1_staff.rename(columns={"DMU": "facility_id"})
-
-o1_staff["facility_id"] = [
-    f"O1L{i+1}" for i in range(len(o1_staff))
-]
-
+o1_staff["facility_id"] = [f"O1L{i+1}" for i in range(len(o1_staff))]
 o1_quality["facility_id"] = o1_staff["facility_id"].values
 
 # Merge staffing and quality
 o1 = pd.merge(o1_staff, o1_quality, on="facility_id", how="left")
 o1["group"] = "O1"
-
 
 # ------------------------------------------------------------
 # O1 resident acuity from O1 Residents sheet
@@ -67,7 +61,6 @@ o1_residents["anacc_class"] = (
 )
 
 # Keep only valid AN-ACC classes 1–13
-# Codes like 101, 102, 103 are treated as invalid/missing
 o1_residents.loc[
     ~o1_residents["anacc_class"].between(1, 13),
     "anacc_class"
@@ -99,26 +92,19 @@ o1_acuity = (
     )
 )
 
-# Direct 0–1 acuity index from AN-ACC Class 1–13
+# Direct 0–1 acuity index from AN-ACC class 1–13
 o1_acuity["acuity_index"] = (
     ((o1_acuity["weighted_class_sum"] / o1_acuity["total_residents"]) - 1) / 12
 )
 
-
 o1 = pd.merge(
     o1,
-    o1_acuity[[
-        "facility_id",
-        "total_residents",
-        "acuity_index"
-    ]],
+    o1_acuity[["facility_id", "total_residents", "acuity_index"]],
     on="facility_id",
     how="left"
 )
 
-
-
-
+# Create staffing variables for O1
 o1["total_staff"] = o1["Admin"] + o1["Life"] + o1["Care"] + o1["Health"]
 o1["care_staff"] = o1["Care"] + o1["Health"]
 o1["support_staff"] = o1["Admin"] + o1["Life"]
@@ -126,13 +112,12 @@ o1["support_staff"] = o1["Admin"] + o1["Life"]
 o1["staff_per_resident"] = o1["total_staff"] / o1["total_residents"]
 o1["care_ratio"] = o1["care_staff"] / o1["total_staff"]
 
-
+# Output summary score
 o1["quality_score"] = (
     o1["quality_rating"] +
     o1["experience_rating"] +
     o1["staffing_rating"]
 ) / 3
-
 
 o1_clean = o1[[
     "facility_id",
@@ -151,7 +136,6 @@ o1_clean = o1[[
     "overall_rating",
     "quality_score"
 ]].copy()
-
 
 # ============================================================
 # O2 DATA
@@ -223,7 +207,6 @@ for var_name, row_idx in rating_map.items():
 anacc_cols = [f"anacc_{i}" for i in range(1, 14)]
 
 o2_clean["total_classified_residents"] = o2_clean[anacc_cols].sum(axis=1)
-
 o2_clean["total_residents"] = (
     o2_clean["total_classified_residents"] +
     o2_clean["unclassified_respite"]
@@ -231,7 +214,6 @@ o2_clean["total_residents"] = (
 
 weights = np.arange(1, 14)
 
-# Direct 0–1 acuity index from AN-ACC Class 1–13
 o2_clean["acuity_index"] = (
     (
         o2_clean[anacc_cols].mul(weights, axis=1).sum(axis=1)
@@ -264,14 +246,12 @@ o2_clean["care_ratio"] = (
     o2_clean["care_staff"] / o2_clean["total_staff"]
 )
 
-# Quality output
 o2_clean["quality_score"] = (
     o2_clean["quality_rating"] +
     o2_clean["experience_rating"] +
     o2_clean["staffing_rating"]
 ) / 3
 
-# Final O2 clean dataset
 o2_clean = o2_clean[[
     "facility_id",
     "group",
@@ -290,46 +270,27 @@ o2_clean = o2_clean[[
     "quality_score"
 ]].copy()
 
-
 # ============================================================
 # COMBINE O1 + O2
 # ============================================================
 
 combined = pd.concat([o1_clean, o2_clean], ignore_index=True)
 
-
-# ============================================================
-# OPTIONAL LOG VARIABLES
-# ============================================================
-
-eps = 1e-6
-
-for d in [o1_clean, o2_clean, combined]:
-    d["ln_y"] = np.log(d["quality_score"] + eps)
-    d["ln_staff"] = np.log(d["total_staff"] + eps)
-    d["ln_residents"] = np.log(d["total_residents"] + eps)
-    d["ln_acuity"] = np.log(d["acuity_index"] + eps)
-
-
-# ============================================================
-# PREVIEW
-# ============================================================
-
+# Preview
 print("O1 clean shape:", o1_clean.shape)
 print("O2 clean shape:", o2_clean.shape)
 print("Combined shape:", combined.shape)
 
-print("\nO1 acuity preview:")
-print(o1_clean[["facility_id", "acuity_index"]].head())
+print("\nO1 preview:")
+print(o1_clean.head())
 
-print("\nO2 acuity preview:")
-print(o2_clean[["facility_id", "acuity_index"]].head())
+print("\nO2 preview:")
+print(o2_clean.head())
 
+print("\nCombined preview:")
+print(combined.head())
 
-# ============================================================
-# SAVE OUTPUTS
-# ============================================================
-
+# Save outputs
 o1_clean.to_csv("o1_cleaned_acuity.csv", index=False)
 o2_clean.to_csv("o2_cleaned_acuity.csv", index=False)
 combined.to_csv("combined_o1_o2_acuity.csv", index=False)
